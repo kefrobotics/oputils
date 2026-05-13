@@ -1,0 +1,24 @@
+[project]
+name = "oputils"
+version = "0.1.0"
+description = "Utitlies from Open Pacific"
+authors = [
+    {name = "jhandKEF",email = "jared@kefrobotics.com"}
+]
+license = {text = "MIT License"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>1.23",
+    "gtsam=4.3a0",
+    "utm>=0.7.0",
+    "pyquaternion>=0.9.9",
+    "pyproj>=3.6.1",
+    "opencv-python=>4.11.0.86",
+    "rosbags=>0.9.23",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
