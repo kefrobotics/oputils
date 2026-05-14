@@ -19,12 +19,10 @@ from copy import copy
 import numpy as np
 from pyquaternion import Quaternion
 import gtsam
+from loguru import logger
 
 # In House
-from open_pacific.utils.coordinate_utils import ecef_to_lla, lla_to_ecef, utm_to_lla, lla_to_utm
-from open_pacific.math.geom import get_dual
-from open_pacific.logger import log_info_message, log_error_message, log_warning_message
-from open_pacific.utils.coordinate_utils import CoordinateFrame
+from oputils.coordinate_utils import ecef_to_lla, lla_to_ecef, utm_to_lla, lla_to_utm, CoordinateFrame
 
 
 @dataclass
@@ -135,7 +133,7 @@ class GlobalPosition:
         self.cov = cov
 
         if self.alt is None and self.ecef is None:
-            log_info_message("Altitude not provided.  Setting to zero.")
+            logger.info("Altitude not provided.  Setting to zero.")
             self.alt = 0.
 
         self._calculate_all_representations()
@@ -154,8 +152,8 @@ class GlobalPosition:
             self._match_construction("utm")
 
         else:
-            log_error_message(
-                "Invalid GlobalPosition contruction or required inputs missing."
+            raise ValueError(
+                "Invalid GlobalPosition contruction: need either ECEF, LLA or UTM coordinates."
             )
 
     def _match_construction(self, mode: str):
@@ -184,9 +182,7 @@ class GlobalPosition:
                 self.ecef = lla_to_ecef(self.lat, self.lon, self.alt)
 
             case _:
-                log_error_message(
-                    "Invalid GlobalPosition contruction mode."
-                )
+                raise ValueError("Invalid GlobalPosition contruction mode.")
 
     def get_ecef(self) -> np.ndarray:
         return self.ecef
@@ -301,7 +297,19 @@ class Unit3():
         """
         Returns a 3x2 basis matrix for the tangent space at this point.
         """
-        return get_dual(self.vector)
+        # Find axis with minimum projection
+        axis = np.zeros((3))
+        axis[np.argmin(np.abs(self.vector))] = 1.
+
+        # Create orthogonal basis
+        b1 = np.cross(self.vector, axis)
+        b1 = b1 / np.linalg.norm(b1)
+        b2 = np.cross(self.vector, b1)
+        b2 = b2 / np.linalg.norm(b2)
+
+        # Stack as 3x2 matrix
+        B = np.column_stack((b1, b2))
+        return B
 
 
 @dataclass(slots=True)
@@ -361,7 +369,7 @@ class Pose(TimeStampedData):
         """
         if not isinstance(tgt_pose, Pose):
             # NOTE: GlobalPose is a subclass of Pose, so it will pass this check.
-            log_warning_message("Cannot only find the transform between two poses.")
+            logger.warning("Cannot only find the transform between two poses.")
             return None
 
         # Find the relative transform between two poses
@@ -412,10 +420,9 @@ class GlobalPose(Pose):
         any ambiguity.
         """
         if not isinstance(self.position, GlobalPosition):
-            log_error_message(
+            raise ValueError(
                 f"Pose requires global position data type for clarity, but its type is {type(self.position)}."
             )
-            pass
 
     def get_isometry(self):
         """ Convert pose information to a 3D isometry object (4x4 array). The translation component is in ECEF."""

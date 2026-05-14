@@ -3,7 +3,7 @@ from gtsam.imuBias import ConstantBias
 import numpy as np
 from pyquaternion import Quaternion
 
-from open_pacific.data.internal_dataclasses import (
+from oputils.types import (
     Pose, GlobalPose, Position, GlobalPosition, IMUBias
 )
 
@@ -72,7 +72,7 @@ def Pose3_to_GlobalPose(
 
 def Point3_to_Position(
     p: Point3, ts: float, cov: np.ndarray = None
-) ->  Position:
+) -> Position:
     """ Convert GTSAM Point3 to a generic Position instance
 
     Args:

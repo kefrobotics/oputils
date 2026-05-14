@@ -7,9 +7,7 @@ import numpy as np
 from pyquaternion import Quaternion
 import pyproj
 import utm
-
-# In House
-from open_pacific.logger import log_error_message, log_info_message
+from loguru import logger
 
 
 # CONSTANTS:
@@ -73,7 +71,7 @@ def get_zone_string(lat: float, lon: float) -> str:
         _, _, zone_int, zone_letter = utm.from_latlon(lat, lon)
         return f"{zone_int}{zone_letter}"
     else:
-        log_info_message("Lat or Lon are None.  No zone string returned.")
+        logger.info("Lat or Lon are None.  No zone string returned.")
         return None
 
 
@@ -115,7 +113,7 @@ def get_utm_to_lla_transform(
     """
     if not zone_str:
         if lat is None or lon is None:
-            log_error_message("Lat and Lon are None with no zone string!")
+            raise ValueError("Lat and Lon are None with no zone string!")
         zone_str = get_zone_string(lat, lon)
     utm_to_lla = UTM_TO_LLA_DICT.get(zone_str)
     if not utm_to_lla:
@@ -200,14 +198,8 @@ def lla_to_utm(
         tuple: (x,y) UTM position and alt in meters, and zone string.
     """
     if lat is None or lon is None:
-        # log_warning_message(
-        #     "Latitude or longitude is None!"
-        # )
         return None, None, alt, None
     elif lat > 84. or lat < -80.:
-        # log_warning_message(
-        #     f"Latitude {lat} must be between -80 and +84 for UTM conversion."
-        # )
         return None, None, alt, None
 
     # Use zone integer and letter string to build UTM transformation.
@@ -249,6 +241,47 @@ def ecef_to_ned_rotation(lat_rad: float, lon_rad: float) -> np.ndarray:
     Returns:
         numpy.ndarray: 3x3 rotation matrix from ECEF to NED
     """
+    # Calculate trigonometric values
+    sin_lat = np.sin(lat_rad)
+    cos_lat = np.cos(lat_rad)
+    sin_lon = np.sin(lon_rad)
+    cos_lon = np.cos(lon_rad)
+
+    # Create rotation matrix
+    rotation = np.zeros((3, 3))
+
+    # First row: North direction in ECEF coordinates
+    rotation[0, 0] = -sin_lat * cos_lon
+    rotation[0, 1] = -sin_lat * sin_lon
+    rotation[0, 2] = cos_lat
+
+    # Second row: East direction in ECEF coordinates
+    rotation[1, 0] = -sin_lon
+    rotation[1, 1] = cos_lon
+    rotation[1, 2] = 0.0
+
+    # Third row: Down direction in ECEF coordinates
+    rotation[2, 0] = -cos_lat * cos_lon
+    rotation[2, 1] = -cos_lat * sin_lon
+    rotation[2, 2] = -sin_lat
+
+    return rotation
+
+
+def ecef_to_ned_rotation_using_ecef(ecef: np.ndarray) -> np.ndarray:
+    """
+    Calculate rotation matrix from ECEF to NED using an ECEF vector.
+
+    Args:
+        ecef (np.ndarray) ECEF position vector.
+
+    Returns:
+        numpy.ndarray: 3x3 rotation matrix from ECEF to NED
+    """
+    lat, lon, _ = ecef_to_lla(ecef)
+    lat_rad = np.deg2rad(lat)
+    lon_rad = np.deg2rad(lon)
+
     # Calculate trigonometric values
     sin_lat = np.sin(lat_rad)
     cos_lat = np.cos(lat_rad)

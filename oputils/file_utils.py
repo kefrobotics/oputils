@@ -1,10 +1,9 @@
 import os
 from natsort import natsorted
 
-from open_pacific.logger import log_warning_message
+from loguru import logger
 
 
-# Bag Utility Functions
 def create_dir(directory: str, warning: str = None):
     """ Bag utility function for creating a directory
 
@@ -16,7 +15,7 @@ def create_dir(directory: str, warning: str = None):
         os.makedirs(directory)
     else:
         if warning is None:
-            log_warning_message(f"Directory already exists: {directory}")
+            logger.warning(f"Directory already exists: {directory}")
         elif warning == "":
             ...
         else:
