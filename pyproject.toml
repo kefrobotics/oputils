@@ -9,12 +9,13 @@ license = {text = "MIT License"}
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "numpy>1.23",
-    "gtsam==4.3a0",
+    "numpy >=1.24, <2.0.0",
+    "scipy >=1.13.1, < 1.14.0",
+        "gtsam==4.3a0",
     "utm>=0.7.0",
     "pyquaternion>=0.9.9",
     "pyproj>=3.6.1",
-    "opencv-python>=4.11.0.86",
+    "opencv-python>=4.11.0.86, <4.12",
     "rosbags>=0.9.23",
     "pytest",
     "loguru"
